@@ -195,6 +195,45 @@ void buddy_free(struct buddy_st* buddy, int offset){
 }
 
 
+int buddy_size(struct buddy_st* buddy, int offset){
+    /**
+     * @brief 释放offset所在位置的内存，假释放，实际上为改变父节点的标记。
+     * @note  使用 left,length,index三元组确定offset
+     * @param buddy : 头节点
+     * @param offset : 释放的内存偏移地址，且必须是allocate得到的最左侧
+     */
+    assert(offset >= 0 && offset < (1 << buddy->level));
+
+    int cur_index = 0 ;
+    // int cur_level = 0 ;
+    int left = 0 ;
+    int cur_length = 1 << buddy->level;
+
+    while(true){
+        if(buddy->tree[cur_index] == NODE_USED){
+            assert(offset == left); 
+            return cur_length;
+        }else if(buddy->tree[cur_index] == NODE_SPLIT || buddy->tree[cur_index] == NODE_FULL){ //!!两种情况都是需要判断这个offset在哪里（我目前感觉应该如果是full肯定是左侧？）
+            cur_length /= 2;
+            if (offset < left + cur_length){
+                cur_index = left_child_index(cur_index);
+                continue;
+            }else{
+                cur_index = right_child_index(cur_index);
+                left += cur_length;
+                continue;
+            }
+        }else {
+            std::cerr << "Invalid offset" << std::endl;
+            return -1;
+        }
+    }
+    return -1;
+}
+
+
+
+
 
 
 
