@@ -39,12 +39,11 @@ void _mark_parent(struct buddy_st* buddy, int index){
      */
 
     while(true){
-
         int brother_node_index = brother_index(index);
         if(brother_node_index >= 0 &&( buddy->tree[brother_node_index] == NODE_USED || buddy->tree[brother_node_index] == NODE_FULL )){
-            int parent_node_index = parent_index(index);
-            buddy->tree[parent_node_index] = NODE_FULL;
-            continue; // 继续向上标记
+            index = parent_index(index); // 更新index为父节点
+            buddy->tree[index] = NODE_FULL;
+            // 继续向上标记，不需要continue
         }else{
             break; // 标记结束
         }        
@@ -110,11 +109,11 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
                 cur_level++;
                 continue;
             }else if (buddy->tree[cur_index] == NODE_USED || buddy->tree[cur_index] == NODE_FULL){
-                // 当前节点被使用或者满了，向右子搜索
+                // 当前节点被使用或者满了，向右子搜索，如果右侧也不可以就回溯
             }
         }
 
-        if(cur_index & 1 == 1){ // isleft
+        if((cur_index & 1) == 1){ // isleft
             cur_index ++ ; // 向右一个节点
             continue; // 看看右侧节点是否可行
         }
@@ -127,7 +126,7 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
                 std::cerr << "alloc failed" << std::endl;
                 return -1;
             }
-            if(cur_index & 1 == 1){
+            if((cur_index & 1) == 1){
                 cur_index++ ; // 看父亲的右侧节点
                 break;
             }       
@@ -140,8 +139,7 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
 
 static void _combine_parent(struct buddy_st *self, int index) // 合并节点
 {
-    for (;;)
-    {
+    while(true){
         int buddy = index - 1 + (index & 1) * 2; // 计算兄弟节点
         if (buddy < 0 || self->tree[buddy] != NODE_UNUSED)
         { // 如果当前层的节点和自己是可以合并的状态，应该继续向上找，改变父亲的逻辑状态，以完成合并
@@ -234,13 +232,36 @@ int buddy_size(struct buddy_st* buddy, int offset){
 
 
 
+static void _dump(struct buddy *self, int index, int level)
+{
+    switch (self->tree[index])
+    {
+    case NODE_UNUSED:
+        printf("(%d:%d)", _index_offset(index, level, self->level), 1 << (self->level - level));
+        break;
+    case NODE_USED:
+        printf("[%d:%d]", _index_offset(index, level, self->level), 1 << (self->level - level));
+        break;
+    case NODE_FULL:
+        printf("{");
+        _dump(self, index * 2 + 1, level + 1);
+        _dump(self, index * 2 + 2, level + 1);
+        printf("}");
+        break;
+    default:
+        printf("(");
+        _dump(self, index * 2 + 1, level + 1);
+        _dump(self, index * 2 + 2, level + 1);
+        printf(")");
+        break;
+    }
+}
 
-
-
-
-
-
-
+void buddy_dump(struct buddy *self)
+{
+    _dump(self, 0, 0);
+    printf("\n");
+}
 
 
 
