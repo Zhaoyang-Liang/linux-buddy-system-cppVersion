@@ -232,15 +232,15 @@ int buddy_size(struct buddy_st* buddy, int offset){
 
 
 
-static void _dump(struct buddy *self, int index, int level)
+static void _dump(struct buddy_st *self, int index, int level)
 {
     switch (self->tree[index])
     {
     case NODE_UNUSED:
-        printf("(%d:%d)", _index_offset(index, level, self->level), 1 << (self->level - level));
+        printf("(%d:%d)", index2offset(index, level, self->level), 1 << (self->level - level));
         break;
     case NODE_USED:
-        printf("[%d:%d]", _index_offset(index, level, self->level), 1 << (self->level - level));
+        printf("[%d:%d]", index2offset(index, level, self->level), 1 << (self->level - level));
         break;
     case NODE_FULL:
         printf("{");
@@ -257,7 +257,7 @@ static void _dump(struct buddy *self, int index, int level)
     }
 }
 
-void buddy_dump(struct buddy *self)
+void buddy_dump(struct buddy_st *self)
 {
     _dump(self, 0, 0);
     printf("\n");
