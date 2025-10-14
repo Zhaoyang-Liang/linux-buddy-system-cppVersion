@@ -4,7 +4,7 @@
 namespace buddy_system {
 
 #define NODE_UNUSED 0
-#define NODE_USED 1  // 只有最底层节点可能是这个状态
+#define NODE_USED 1  
 #define NODE_SPLIT 2
 #define NODE_FULL 3
 
@@ -124,7 +124,7 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
             cur_index = parent_index(cur_index);
             cur_length = cur_length * 2;
             if(cur_index < 0){
-                std::cout << "alloc failed" << std::endl;
+                std::cerr << "alloc failed" << std::endl;
                 return -1;
             }
             if(cur_index & 1 == 1){
@@ -133,9 +133,70 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
             }       
         }       
     }
-   
-    // return 0;
+
+    return -1; // 不可能达到
 }
+
+
+static void _combine_parent(struct buddy_st *self, int index) // 合并节点
+{
+    for (;;)
+    {
+        int buddy = index - 1 + (index & 1) * 2; // 计算兄弟节点
+        if (buddy < 0 || self->tree[buddy] != NODE_UNUSED)
+        { // 如果当前层的节点和自己是可以合并的状态，应该继续向上找，改变父亲的逻辑状态，以完成合并
+            self->tree[index] = NODE_UNUSED; // 发现父亲所在的层已经不可合并了，且父亲的儿子们都可以合并，则将父亲标记为未使用
+            while (((index = (index + 1) / 2 - 1) >= 0) && self->tree[index] == NODE_FULL) 
+            { // 再看看自己的爹，如果自己的爹不是split状态，就全变成split状态
+                self->tree[index] = NODE_SPLIT; 
+            }
+            return;
+        }
+        index = (index + 1) / 2 - 1;  // 找爹
+    }
+}
+
+
+void buddy_free(struct buddy_st* buddy, int offset){
+    /**
+     * @brief 释放offset所在位置的内存，假释放，实际上为改变父节点的标记。
+     * @note  使用 left,length,index三元组确定offset
+     * @param buddy : 头节点
+     * @param offset : 释放的内存偏移地址，且必须是allocate得到的最左侧
+     */
+    assert(offset >= 0 && offset < (1 << buddy->level));
+
+    int cur_index = 0 ;
+    // int cur_level = 0 ;
+    int left = 0 ;
+    int cur_length = 1 << buddy->level;
+
+    while(true){
+        if(buddy->tree[cur_index] == NODE_USED){
+            assert(offset == left); 
+            _combine_parent(buddy, cur_index);
+            return;
+        }else if(buddy->tree[cur_index] == NODE_SPLIT || buddy->tree[cur_index] == NODE_FULL){ //!!两种情况都是需要判断这个offset在哪里（我目前感觉应该如果是full肯定是左侧？）
+            cur_length /= 2;
+            if (offset < left + cur_length){
+                cur_index = left_child_index(cur_index);
+                continue;
+            }else{
+                cur_index = right_child_index(cur_index);
+                left += cur_length;
+                continue;
+            }
+        }else {
+            std::cerr << "Invalid offset" << std::endl;
+            return;
+        }
+    }
+    return ;
+}
+
+
+
+
 
 
 
