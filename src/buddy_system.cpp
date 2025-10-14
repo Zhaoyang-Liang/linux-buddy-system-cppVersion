@@ -1,6 +1,5 @@
 #include "buddy_system.h"
 
-
 namespace buddy_system {
 
 #define NODE_UNUSED 0
@@ -14,7 +13,7 @@ struct buddy_st {
     unsigned char tree[];
 };
 
-struct buddy_st* new_buddy(int level) {
+struct buddy_st* new_buddy(int level){
     int last_level_node_num = 1 << level ; 
     int all_node_num = 2 * last_level_node_num - 1;
 
@@ -27,7 +26,7 @@ struct buddy_st* new_buddy(int level) {
     return buddy;
 }
 
-void free_buddy(struct buddy_st* buddy){
+void buddy_delete(struct buddy_st* buddy){
     free(buddy);
 }
 
@@ -63,12 +62,11 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
     int size_to_alloc ;
     int max_level_length = 1 << buddy->level;
 
-    assert(size_needed > 0);
-    
     if(size_needed == 0){
         // 如果要分配0个字节，则分配1个字节
         size_to_alloc = 1 ;
     }else{
+        assert(size_needed > 0);
         size_to_alloc = next_pow_of_2(size_needed);
     } 
 
@@ -109,7 +107,8 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
                 cur_level++;
                 continue;
             }else if (buddy->tree[cur_index] == NODE_USED || buddy->tree[cur_index] == NODE_FULL){
-                // 当前节点被使用或者满了，向右子搜索，如果右侧也不可以就回溯
+                // 当前节点被使用或者满了，需要回溯到父节点寻找其他可用空间
+                // 不能直接向右搜索，因为可能会跳过左侧的可用空间
             }
         }
 
@@ -232,7 +231,7 @@ int buddy_size(struct buddy_st* buddy, int offset){
 
 
 
-static void _dump(struct buddy_st *self, int index, int level)
+void _show(struct buddy_st *self, int index, int level)
 {
     switch (self->tree[index])
     {
@@ -244,22 +243,22 @@ static void _dump(struct buddy_st *self, int index, int level)
         break;
     case NODE_FULL:
         printf("{");
-        _dump(self, index * 2 + 1, level + 1);
-        _dump(self, index * 2 + 2, level + 1);
+        _show(self, index * 2 + 1, level + 1);
+        _show(self, index * 2 + 2, level + 1);
         printf("}");
         break;
     default:
         printf("(");
-        _dump(self, index * 2 + 1, level + 1);
-        _dump(self, index * 2 + 2, level + 1);
+        _show(self, index * 2 + 1, level + 1);
+        _show(self, index * 2 + 2, level + 1);
         printf(")");
         break;
     }
 }
 
-void buddy_dump(struct buddy_st *self)
+void buddy_show(struct buddy_st *self)
 {
-    _dump(self, 0, 0);
+    _show(self, 0, 0);
     printf("\n");
 }
 
