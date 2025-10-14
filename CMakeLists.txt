@@ -12,4 +12,4 @@ include_directories(include)
 add_executable(test test.cpp src/buddy_system.cpp)
 
 # 设置编译选项
-target_compile_options(test PRIVATE -Wall -Wextra -g)
+target_compile_options(test PRIVATE -g)

@@ -1,3 +1,16 @@
+/**
+ * @file buddy_system.cpp
+ * @brief 伙伴系统内存管理器模拟接口
+ * @date 2025-10-14
+ * @copyright Copyright (c) 2025 Zhaoyang-Liang. All rights reserved.
+ * 
+ * @note 本文件部分设计思路参考了项目：
+ *       https://github.com/ucore-test/buddy-system-in-ucore-test
+ *       原项目未声明开源许可，本实现仅在学习与研究基础上重新编写，
+ *       与原代码实现存在差异。
+ */
+
+
 #include "buddy_system.h"
 
 namespace buddy_system {
@@ -107,8 +120,7 @@ int buddy_alloc(struct buddy_st* buddy, int size_needed){
                 cur_level++;
                 continue;
             }else if (buddy->tree[cur_index] == NODE_USED || buddy->tree[cur_index] == NODE_FULL){
-                // 当前节点被使用或者满了，需要回溯到父节点寻找其他可用空间
-                // 不能直接向右搜索，因为可能会跳过左侧的可用空间
+                // 当前节点被使用或者满了，向右子搜索，如果右侧也不可以就回溯
             }
         }
 
